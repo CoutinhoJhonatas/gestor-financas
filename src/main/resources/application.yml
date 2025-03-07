@@ -1,0 +1,16 @@
+logging:
+    level:
+        org:
+            atmosphere: warn
+server:
+    port: ${PORT:8080}
+
+spring:
+    mustache:
+        check-template-location: false
+    profiles:
+        active: dev
+
+vaadin:
+    allowed-packages: com.vaadin,org.vaadin,com.git
+    launch-browser: true
