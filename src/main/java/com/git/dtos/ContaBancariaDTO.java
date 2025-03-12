@@ -1,44 +1,34 @@
-package com.git.data;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+package com.git.dtos;
 
 import java.util.List;
 
-@Entity
-@Table(name = "tb_conta_bancaria")
-public class ContaBancaria {
+public class ContaBancariaDTO {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private String nomeInstituicao;
     private String agencia;
     private String numero;
     private String digito;
+    private List<TransacaoDTO> transacoes;
 
-    @OneToMany(mappedBy = "contaBancaria")
-    private List<Transacao> transacoes;
-
-    @ManyToOne
-    @JoinColumn(name = "usuario_id")
-    private User usuario;
-
-    public ContaBancaria() {
+    public ContaBancariaDTO() {
     }
 
-    public ContaBancaria(Long id, String nomeInstituicao, String agencia, String numero, String digito) {
+    public ContaBancariaDTO(Long id, String nomeInstituicao, String agencia, String numero, String digito) {
         this.id = id;
         this.nomeInstituicao = nomeInstituicao;
         this.agencia = agencia;
         this.numero = numero;
         this.digito = digito;
+    }
+
+    public ContaBancariaDTO(Long id, String nomeInstituicao, String agencia, String numero, String digito, List<TransacaoDTO> transacoes) {
+        this.id = id;
+        this.nomeInstituicao = nomeInstituicao;
+        this.agencia = agencia;
+        this.numero = numero;
+        this.digito = digito;
+        this.transacoes = transacoes;
     }
 
     public Long getId() {
@@ -81,11 +71,11 @@ public class ContaBancaria {
         this.digito = digito;
     }
 
-    public List<Transacao> getTransacoes() {
+    public List<TransacaoDTO> getTransacoes() {
         return transacoes;
     }
 
-    public void setTransacoes(List<Transacao> transacoes) {
+    public void setTransacoes(List<TransacaoDTO> transacoes) {
         this.transacoes = transacoes;
     }
 }

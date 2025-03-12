@@ -7,8 +7,10 @@ import org.springframework.stereotype.Service;
 public class ContaBancariaService {
 
     private final ContaBancariaRepository contaBancariaRepository;
+    private final UserService userService;
 
-    public ContaBancariaService(ContaBancariaRepository contaBancariaRepository) {
+    public ContaBancariaService(ContaBancariaRepository contaBancariaRepository, UserService userService) {
         this.contaBancariaRepository = contaBancariaRepository;
+        this.userService = userService;
     }
 }

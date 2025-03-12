@@ -1,240 +1,139 @@
-/*
 package com.git.views.realizado;
 
-import com.vaadin.flow.component.Component;
+import com.git.dtos.TransacaoDTO;
+import com.git.services.TransacaoService;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
-import com.vaadin.flow.component.orderedlayout.FlexLayout;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Predicate;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
-import java.util.ArrayList;
+import java.time.LocalDate;
 import java.util.List;
 
 @PageTitle("Realizado")
 @Route("realizado")
 @Menu(order = 1, icon = LineAwesomeIconUrl.PENCIL_RULER_SOLID)
 @PermitAll
-public class RealizadoView extends Div {
+public class RealizadoView extends Composite<VerticalLayout> {
 
-    private Grid<SamplePerson> grid;
+    private Grid<TransacaoDTO> grid;
+    private final TransacaoService transacaoService;
+    private List<TransacaoDTO> transacoes;
 
-    private Filters filters;
-    private final SamplePersonService samplePersonService;
+    public RealizadoView(TransacaoService transacaoService) {
+        this.transacaoService = transacaoService;
 
-    public RealizadoView(SamplePersonService SamplePersonService) {
-        this.samplePersonService = SamplePersonService;
-        setSizeFull();
-        addClassNames("gridwith-filters-view");
+        getContent().setWidthFull();
 
-        filters = new Filters(() -> refreshGrid());
-        VerticalLayout layout = new VerticalLayout(createMobileFilters(), filters, createGrid());
-        layout.setSizeFull();
-        layout.setPadding(false);
-        layout.setSpacing(false);
-        add(layout);
-    }
+        Div filtrosDiv = new Div();
+        filtrosDiv.setWidth("100%");
+        filtrosDiv.setClassName("filtros-div");
+        filtrosDiv.getStyle()
+                .setDisplay(Style.Display.FLEX)
+                .setFlexWrap(Style.FlexWrap.WRAP)
+                .setJustifyContent(Style.JustifyContent.SPACE_AROUND)
+                .setAlignItems(Style.AlignItems.CENTER);
 
-    private HorizontalLayout createMobileFilters() {
-        // Mobile version
-        HorizontalLayout mobileFilters = new HorizontalLayout();
-        mobileFilters.setWidthFull();
-        mobileFilters.addClassNames(LumoUtility.Padding.MEDIUM, LumoUtility.BoxSizing.BORDER,
-                LumoUtility.AlignItems.CENTER);
-        mobileFilters.addClassName("mobile-filters");
+        MultiSelectComboBox<String> contasBancarias = new MultiSelectComboBox<>("Conta Bancária");
+        contasBancarias.setItems("Itaú", "Nubank", "Inter", "Santander");
+        contasBancarias.setPlaceholder("Escolha uma ou mais contas");
+        contasBancarias.setEnabled(false);
 
-        Icon mobileIcon = new Icon("lumo", "plus");
-        Span filtersHeading = new Span("Filters");
-        mobileFilters.add(mobileIcon, filtersHeading);
-        mobileFilters.setFlexGrow(1, filtersHeading);
-        mobileFilters.addClickListener(e -> {
-            if (filters.getClassNames().contains("visible")) {
-                filters.removeClassName("visible");
-                mobileIcon.getElement().setAttribute("icon", "lumo:plus");
-            } else {
-                filters.addClassName("visible");
-                mobileIcon.getElement().setAttribute("icon", "lumo:minus");
-            }
+        DatePicker startDate = new DatePicker("Data Inicial");
+        DatePicker endDate = new DatePicker("Data Final");
+
+        filtrosDiv.add(startDate, endDate, contasBancarias);
+
+        Div btnsDiv = new Div();
+        btnsDiv.setWidth("100%");
+        btnsDiv.setClassName("btns-dv");
+        btnsDiv.getStyle()
+                .setDisplay(Style.Display.FLEX)
+                .setJustifyContent(Style.JustifyContent.CENTER)
+                .setMarginTop("20px");
+
+        Button searchBtn = new Button("Buscar", e -> {
+            transacoes = transacaoService.buscarTransacoesByPeriodo(1L, LocalDate.now(), LocalDate.now());
+            grid.setItems(transacoes);
         });
-        return mobileFilters;
+        searchBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        searchBtn.getStyle().setMarginRight("20px");
+
+        Button resetBtn = new Button("Limpar", e -> {
+            startDate.clear();
+            endDate.clear();
+            contasBancarias.clear();
+        });
+        resetBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+        btnsDiv.add(searchBtn, resetBtn);
+        filtrosDiv.add(btnsDiv);
+
+        Div gridDiv = new Div();
+        gridDiv.setWidth("100%");
+        gridDiv.setClassName("grid-div");
+
+        grid = createGrid();
+        gridDiv.add(grid);
+
+        getContent().add(filtrosDiv, gridDiv);
     }
 
-    public static class Filters extends Div implements Specification<SamplePerson> {
+    private Grid<TransacaoDTO> createGrid() {
+        Grid<TransacaoDTO> grid = new Grid<>(TransacaoDTO.class, false);
+        grid.addColumn("data").setAutoWidth(true).setFlexGrow(1).setHeader("Data");
+        grid.addColumn("descricao").setAutoWidth(true).setFlexGrow(2).setHeader("Descrição");
+        grid.addColumn("valor").setAutoWidth(true).setFlexGrow(1).setHeader("Valor");
+        grid.addColumn("nomeInstituicao").setAutoWidth(true).setFlexGrow(1).setHeader("Conta Bancária");
+        grid.addColumn(
+                new ComponentRenderer<>(Div::new, (div, contaBancariaDTO) -> {
+                    div.setWidthFull();
+                    div.getStyle().setDisplay(Style.Display.FLEX);
+                    div.getStyle().setJustifyContent(Style.JustifyContent.SPACE_AROUND);
 
-        private final TextField name = new TextField("Name");
-        private final TextField phone = new TextField("Phone");
-        private final DatePicker startDate = new DatePicker("Date of Birth");
-        private final DatePicker endDate = new DatePicker();
-        private final MultiSelectComboBox<String> occupations = new MultiSelectComboBox<>("Occupation");
-        private final CheckboxGroup<String> roles = new CheckboxGroup<>("Role");
+                    Button buttonEdit = new Button();
+                    buttonEdit.addThemeVariants(ButtonVariant.LUMO_ICON);
+                    buttonEdit.addClickListener(e -> Notification.show("Button Edit"));
+                    buttonEdit.setIcon(new Icon(VaadinIcon.PENCIL));
 
-        public Filters(Runnable onSearch) {
+                    Button buttonDelete = new Button();
+                    buttonDelete.addThemeVariants(ButtonVariant.LUMO_ICON,
+                            ButtonVariant.LUMO_ERROR,
+                            ButtonVariant.LUMO_TERTIARY);
+                    buttonDelete.addClickListener(e -> Notification.show("Button Trash"));
+                    buttonDelete.setIcon(new Icon(VaadinIcon.TRASH));
 
-            setWidthFull();
-            addClassName("filter-layout");
-            addClassNames(LumoUtility.Padding.Horizontal.LARGE, LumoUtility.Padding.Vertical.MEDIUM,
-                    LumoUtility.BoxSizing.BORDER);
-            name.setPlaceholder("First or last name");
+                    div.add(buttonEdit, buttonDelete);
+                })).setHeader("Opções");
 
-            occupations.setItems("Insurance Clerk", "Mortarman", "Beer Coil Cleaner", "Scale Attendant");
+        //grid.setItems(new TransacaoDTO(1L, "07/03/2025", "Pag Tit teste010203", BigDecimal.valueOf(2000.00)));
 
-            roles.setItems("Worker", "Supervisor", "Manager", "External");
-            roles.addClassName("double-width");
-
-            // Action buttons
-            Button resetBtn = new Button("Reset");
-            resetBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-            resetBtn.addClickListener(e -> {
-                name.clear();
-                phone.clear();
-                startDate.clear();
-                endDate.clear();
-                occupations.clear();
-                roles.clear();
-                onSearch.run();
-            });
-            Button searchBtn = new Button("Search");
-            searchBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            searchBtn.addClickListener(e -> onSearch.run());
-
-            Div actions = new Div(resetBtn, searchBtn);
-            actions.addClassName(LumoUtility.Gap.SMALL);
-            actions.addClassName("actions");
-
-            add(name, phone, createDateRangeFilter(), occupations, roles, actions);
-        }
-
-        private Component createDateRangeFilter() {
-            startDate.setPlaceholder("From");
-
-            endDate.setPlaceholder("To");
-
-            // For screen readers
-            startDate.setAriaLabel("From date");
-            endDate.setAriaLabel("To date");
-
-            FlexLayout dateRangeComponent = new FlexLayout(startDate, new Text(" – "), endDate);
-            dateRangeComponent.setAlignItems(FlexComponent.Alignment.BASELINE);
-            dateRangeComponent.addClassName(LumoUtility.Gap.XSMALL);
-
-            return dateRangeComponent;
-        }
-
-        @Override
-        public Predicate toPredicate(Root<SamplePerson> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
-            List<Predicate> predicates = new ArrayList<>();
-
-            if (!name.isEmpty()) {
-                String lowerCaseFilter = name.getValue().toLowerCase();
-                Predicate firstNameMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")),
-                        lowerCaseFilter + "%");
-                Predicate lastNameMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("lastName")),
-                        lowerCaseFilter + "%");
-                predicates.add(criteriaBuilder.or(firstNameMatch, lastNameMatch));
-            }
-            if (!phone.isEmpty()) {
-                String databaseColumn = "phone";
-                String ignore = "- ()";
-
-                String lowerCaseFilter = ignoreCharacters(ignore, phone.getValue().toLowerCase());
-                Predicate phoneMatch = criteriaBuilder.like(
-                        ignoreCharacters(ignore, criteriaBuilder, criteriaBuilder.lower(root.get(databaseColumn))),
-                        "%" + lowerCaseFilter + "%");
-                predicates.add(phoneMatch);
-
-            }
-            if (startDate.getValue() != null) {
-                String databaseColumn = "dateOfBirth";
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(databaseColumn),
-                        criteriaBuilder.literal(startDate.getValue())));
-            }
-            if (endDate.getValue() != null) {
-                String databaseColumn = "dateOfBirth";
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(criteriaBuilder.literal(endDate.getValue()),
-                        root.get(databaseColumn)));
-            }
-            if (!occupations.isEmpty()) {
-                String databaseColumn = "occupation";
-                List<Predicate> occupationPredicates = new ArrayList<>();
-                for (String occupation : occupations.getValue()) {
-                    occupationPredicates
-                            .add(criteriaBuilder.equal(criteriaBuilder.literal(occupation), root.get(databaseColumn)));
-                }
-                predicates.add(criteriaBuilder.or(occupationPredicates.toArray(Predicate[]::new)));
-            }
-            if (!roles.isEmpty()) {
-                String databaseColumn = "role";
-                List<Predicate> rolePredicates = new ArrayList<>();
-                for (String role : roles.getValue()) {
-                    rolePredicates.add(criteriaBuilder.equal(criteriaBuilder.literal(role), root.get(databaseColumn)));
-                }
-                predicates.add(criteriaBuilder.or(rolePredicates.toArray(Predicate[]::new)));
-            }
-            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
-        }
-
-        private String ignoreCharacters(String characters, String in) {
-            String result = in;
-            for (int i = 0; i < characters.length(); i++) {
-                result = result.replace("" + characters.charAt(i), "");
-            }
-            return result;
-        }
-
-        private Expression<String> ignoreCharacters(String characters, CriteriaBuilder criteriaBuilder,
-                                                    Expression<String> inExpression) {
-            Expression<String> expression = inExpression;
-            for (int i = 0; i < characters.length(); i++) {
-                expression = criteriaBuilder.function("replace", String.class, expression,
-                        criteriaBuilder.literal(characters.charAt(i)), criteriaBuilder.literal(""));
-            }
-            return expression;
-        }
-
-    }
-
-    private Component createGrid() {
-        grid = new Grid<>(SamplePerson.class, false);
-        grid.addColumn("firstName").setAutoWidth(true);
-        grid.addColumn("lastName").setAutoWidth(true);
-        grid.addColumn("email").setAutoWidth(true);
-        grid.addColumn("phone").setAutoWidth(true);
-        grid.addColumn("dateOfBirth").setAutoWidth(true);
-        grid.addColumn("occupation").setAutoWidth(true);
-        grid.addColumn("role").setAutoWidth(true);
-
-        grid.setItems(query -> samplePersonService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), filters)
-                .stream());
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
-        grid.addClassNames(LumoUtility.Border.TOP, LumoUtility.BorderColor.CONTRAST_10);
+        grid.addClassName(LumoUtility.Border.TOP);
+        grid.getStyle().setDisplay(Style.Display.FLEX);
+        grid.getStyle().setJustifyContent(Style.JustifyContent.CENTER);
+        grid.getStyle().setAlignItems(Style.AlignItems.CENTER);
 
         return grid;
     }
 
-    private void refreshGrid() {
-        grid.getDataProvider().refreshAll();
-    }
+        /*private void refreshGrid() {
+            grid.getDataProvider().refreshAll();
+        }*/
 }
-*/
