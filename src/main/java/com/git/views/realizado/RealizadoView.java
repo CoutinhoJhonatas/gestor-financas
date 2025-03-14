@@ -1,6 +1,8 @@
 package com.git.views.realizado;
 
+import com.git.data.User;
 import com.git.dtos.TransacaoDTO;
+import com.git.security.AuthenticatedUser;
 import com.git.services.TransacaoService;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
@@ -13,14 +15,18 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.data.renderer.LocalDateRenderer;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 import java.time.LocalDate;
@@ -32,12 +38,21 @@ import java.util.List;
 @PermitAll
 public class RealizadoView extends Composite<VerticalLayout> {
 
-    private Grid<TransacaoDTO> grid;
     private final TransacaoService transacaoService;
+    private final AuthenticatedUser authenticatedUser;
+    private Grid<TransacaoDTO> grid;
     private List<TransacaoDTO> transacoes;
+    private User user;
 
-    public RealizadoView(TransacaoService transacaoService) {
+    public RealizadoView(TransacaoService transacaoService, AuthenticatedUser authenticatedUser) {
         this.transacaoService = transacaoService;
+        this.authenticatedUser = authenticatedUser;
+
+        if(authenticatedUser.get().isPresent()) {
+            user = authenticatedUser.get().get();
+        } else {
+            throw new UsernameNotFoundException("User not found");
+        }
 
         getContent().setWidthFull();
 
@@ -47,8 +62,7 @@ public class RealizadoView extends Composite<VerticalLayout> {
         filtrosDiv.getStyle()
                 .setDisplay(Style.Display.FLEX)
                 .setFlexWrap(Style.FlexWrap.WRAP)
-                .setJustifyContent(Style.JustifyContent.SPACE_AROUND)
-                .setAlignItems(Style.AlignItems.CENTER);
+                .setJustifyContent(Style.JustifyContent.SPACE_AROUND);
 
         MultiSelectComboBox<String> contasBancarias = new MultiSelectComboBox<>("Conta Bancária");
         contasBancarias.setItems("Itaú", "Nubank", "Inter", "Santander");
@@ -56,7 +70,26 @@ public class RealizadoView extends Composite<VerticalLayout> {
         contasBancarias.setEnabled(false);
 
         DatePicker startDate = new DatePicker("Data Inicial");
+        startDate.setPlaceholder("dd/mm/aaaa");
+        startDate.setMax(LocalDate.now());
+        startDate.setI18n(new DatePicker.DatePickerI18n()
+                .setBadInputErrorMessage("Formato de data inválida")
+                .setMaxErrorMessage("Data não pode ser superior a hoje"));
+
         DatePicker endDate = new DatePicker("Data Final");
+        endDate.setPlaceholder("dd/mm/aaaa");
+        endDate.setMax(LocalDate.now());
+        endDate.setI18n(new DatePicker.DatePickerI18n()
+                .setBadInputErrorMessage("Formato de data inválida")
+                .setMaxErrorMessage("Data não pode ser superior a hoje"));
+
+        startDate.addValueChangeListener(e -> endDate.setMin(startDate.getValue()));
+        endDate.addValueChangeListener(e -> startDate.setMax(endDate.getValue()));
+
+        Binder<DatePicker> binder = new Binder<>(DatePicker.class);
+        binder.forField(startDate)
+                .asRequired("Data inicial requerida")
+                .bind(DatePicker::getValue, DatePicker::setValue);
 
         filtrosDiv.add(startDate, endDate, contasBancarias);
 
@@ -66,11 +99,20 @@ public class RealizadoView extends Composite<VerticalLayout> {
         btnsDiv.getStyle()
                 .setDisplay(Style.Display.FLEX)
                 .setJustifyContent(Style.JustifyContent.CENTER)
-                .setMarginTop("20px");
+                .setMarginTop("5px");
 
         Button searchBtn = new Button("Buscar", e -> {
-            transacoes = transacaoService.buscarTransacoesByPeriodo(1L, LocalDate.now(), LocalDate.now());
-            grid.setItems(transacoes);
+            Notification notification;
+            if (binder.validate().isOk()) {
+                transacoes = transacaoService.buscarTransacoesByPeriodo(user.getId(), startDate.getValue(), endDate.getValue());
+                grid.setItems(transacoes);
+                binder.readBean(null);
+            } else {
+                System.out.println(binder.validate().getValidationErrors());
+                notification = Notification.show("Erro ao buscar dados");
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+
         });
         searchBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         searchBtn.getStyle().setMarginRight("20px");
@@ -87,6 +129,7 @@ public class RealizadoView extends Composite<VerticalLayout> {
 
         Div gridDiv = new Div();
         gridDiv.setWidth("100%");
+        gridDiv.setHeight("100%");
         gridDiv.setClassName("grid-div");
 
         grid = createGrid();
@@ -97,7 +140,12 @@ public class RealizadoView extends Composite<VerticalLayout> {
 
     private Grid<TransacaoDTO> createGrid() {
         Grid<TransacaoDTO> grid = new Grid<>(TransacaoDTO.class, false);
-        grid.addColumn("data").setAutoWidth(true).setFlexGrow(1).setHeader("Data");
+        grid.addColumn(new LocalDateRenderer<>(TransacaoDTO::getData, "dd/MM/yyyy"))
+                .setAutoWidth(true)
+                .setFlexGrow(1)
+                .setHeader("Data")
+                .setSortable(true)
+                .setComparator(TransacaoDTO::getData);
         grid.addColumn("descricao").setAutoWidth(true).setFlexGrow(2).setHeader("Descrição");
         grid.addColumn("valor").setAutoWidth(true).setFlexGrow(1).setHeader("Valor");
         grid.addColumn("nomeInstituicao").setAutoWidth(true).setFlexGrow(1).setHeader("Conta Bancária");
@@ -122,13 +170,15 @@ public class RealizadoView extends Composite<VerticalLayout> {
                     div.add(buttonEdit, buttonDelete);
                 })).setHeader("Opções");
 
-        //grid.setItems(new TransacaoDTO(1L, "07/03/2025", "Pag Tit teste010203", BigDecimal.valueOf(2000.00)));
-
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+        grid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
         grid.addClassName(LumoUtility.Border.TOP);
         grid.getStyle().setDisplay(Style.Display.FLEX);
         grid.getStyle().setJustifyContent(Style.JustifyContent.CENTER);
         grid.getStyle().setAlignItems(Style.AlignItems.CENTER);
+
+        //Todo verificar como deixar o heigth mais dinamico
+        grid.setMaxHeight("500px");
 
         return grid;
     }

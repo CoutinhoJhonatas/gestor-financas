@@ -1,11 +1,12 @@
 package com.git.dtos;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public class TransacaoDTO {
 
     private Long id;
-    private String data;
+    private LocalDate data;
     private String descricao;
     private BigDecimal valor;
     private String nomeInstituicao;
@@ -14,7 +15,7 @@ public class TransacaoDTO {
     public TransacaoDTO() {
     }
 
-    public TransacaoDTO(Long id, String data, String descricao, BigDecimal valor, String nomeInstituicao, Long idInstituicao) {
+    public TransacaoDTO(Long id, LocalDate data, String descricao, BigDecimal valor, String nomeInstituicao, Long idInstituicao) {
         this.id = id;
         this.data = data;
         this.descricao = descricao;
@@ -31,11 +32,11 @@ public class TransacaoDTO {
         this.id = id;
     }
 
-    public String getData() {
+    public LocalDate getData() {
         return data;
     }
 
-    public void setData(String data) {
+    public void setData(LocalDate data) {
         this.data = data;
     }
 
