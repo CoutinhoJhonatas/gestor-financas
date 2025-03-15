@@ -7,10 +7,11 @@ import com.git.repositories.ContaBancariaRepository;
 import com.git.repositories.TransacaoRepository;
 import org.springframework.stereotype.Service;
 
+import java.text.NumberFormat;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class TransacaoService {
@@ -49,5 +50,29 @@ public class TransacaoService {
         });
 
         return transacaoDTOS;
+    }
+
+    public String calcularTotalEntrada(List<TransacaoDTO> transacoes) {
+        double totalEntrada = 0.0;
+        for (TransacaoDTO transacaoDTO : transacoes) {
+            if (transacaoDTO.getValor().doubleValue() > 0) {
+                totalEntrada += transacaoDTO.getValor().doubleValue();
+            }
+        }
+
+        NumberFormat formatter = NumberFormat.getCurrencyInstance(Locale.of("pt", "BR"));
+        return formatter.format(totalEntrada);
+    }
+
+    public String calcularTotalSaida(List<TransacaoDTO> transacoes) {
+        double totalSaida = 0.0;
+        for (TransacaoDTO transacaoDTO : transacoes) {
+            if (transacaoDTO.getValor().doubleValue() < 0) {
+                totalSaida += transacaoDTO.getValor().doubleValue();
+            }
+        }
+
+        NumberFormat formatter = NumberFormat.getCurrencyInstance(Locale.of("pt", "BR"));
+        return formatter.format(totalSaida);
     }
 }

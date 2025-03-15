@@ -12,14 +12,18 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.NumberField;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateRenderer;
+import com.vaadin.flow.data.renderer.NumberRenderer;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
@@ -29,8 +33,11 @@ import jakarta.annotation.security.PermitAll;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 
 @PageTitle("Realizado")
 @Route("realizado")
@@ -93,6 +100,24 @@ public class RealizadoView extends Composite<VerticalLayout> {
 
         filtrosDiv.add(startDate, endDate, contasBancarias);
 
+        Div totaisDiv = new Div();
+        totaisDiv.setWidth("100%");
+        totaisDiv.setHeight("100%");
+        totaisDiv.setClassName("totais-div");
+        totaisDiv.getStyle()
+                .setDisplay(Style.Display.FLEX)
+                .setJustifyContent(Style.JustifyContent.CENTER);
+
+        TextField totalEntradas = new TextField("Total Entradas");
+        totalEntradas.setReadOnly(true);
+        totalEntradas.getStyle()
+                .setMarginRight("25px");
+
+        TextField totalSaidas = new TextField("Total Saídas");
+        totalSaidas.setReadOnly(true);
+
+        totaisDiv.add(totalEntradas, totalSaidas);
+
         Div btnsDiv = new Div();
         btnsDiv.setWidth("100%");
         btnsDiv.setClassName("btns-dv");
@@ -106,6 +131,8 @@ public class RealizadoView extends Composite<VerticalLayout> {
             if (binder.validate().isOk()) {
                 transacoes = transacaoService.buscarTransacoesByPeriodo(user.getId(), startDate.getValue(), endDate.getValue());
                 grid.setItems(transacoes);
+                totalEntradas.setValue(transacaoService.calcularTotalEntrada(transacoes));
+                totalSaidas.setValue(transacaoService.calcularTotalSaida(transacoes));
                 binder.readBean(null);
             } else {
                 System.out.println(binder.validate().getValidationErrors());
@@ -135,7 +162,7 @@ public class RealizadoView extends Composite<VerticalLayout> {
         grid = createGrid();
         gridDiv.add(grid);
 
-        getContent().add(filtrosDiv, gridDiv);
+        getContent().add(filtrosDiv, gridDiv,totaisDiv);
     }
 
     private Grid<TransacaoDTO> createGrid() {
@@ -147,7 +174,21 @@ public class RealizadoView extends Composite<VerticalLayout> {
                 .setSortable(true)
                 .setComparator(TransacaoDTO::getData);
         grid.addColumn("descricao").setAutoWidth(true).setFlexGrow(2).setHeader("Descrição");
-        grid.addColumn("valor").setAutoWidth(true).setFlexGrow(1).setHeader("Valor");
+
+        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.of("pt", "BR"));
+        grid.addColumn(
+                new ComponentRenderer<>(transacaoDTO -> {
+                    Span span = new Span(currencyFormat.format(transacaoDTO.getValor()));
+
+                    if (transacaoDTO.getValor().doubleValue() < 0) {
+                        span.getStyle().set("color", "#E57373");
+                    }
+                    return span;
+                }))
+                .setAutoWidth(true)
+                .setFlexGrow(1)
+                .setHeader("Valor");
+
         grid.addColumn("nomeInstituicao").setAutoWidth(true).setFlexGrow(1).setHeader("Conta Bancária");
         grid.addColumn(
                 new ComponentRenderer<>(Div::new, (div, contaBancariaDTO) -> {
@@ -177,13 +218,6 @@ public class RealizadoView extends Composite<VerticalLayout> {
         grid.getStyle().setJustifyContent(Style.JustifyContent.CENTER);
         grid.getStyle().setAlignItems(Style.AlignItems.CENTER);
 
-        //Todo verificar como deixar o heigth mais dinamico
-        grid.setMaxHeight("500px");
-
         return grid;
     }
-
-        /*private void refreshGrid() {
-            grid.getDataProvider().refreshAll();
-        }*/
 }
