@@ -1,11 +1,15 @@
 package com.git.services;
 
+import com.git.data.Transacao;
 import com.git.dtos.TransacaoDTO;
+import com.git.exceptions.NotFoundException;
+import com.git.mappers.TransacaoMapper;
 import com.git.projections.ContaBancariaProjection;
 import com.git.projections.TransacoesProjection;
 import com.git.repositories.ContaBancariaRepository;
 import com.git.repositories.TransacaoRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.NumberFormat;
 import java.time.LocalDate;
@@ -18,12 +22,24 @@ public class TransacaoService {
 
     private final TransacaoRepository transacaoRepository;
     private final ContaBancariaRepository contaBancariaRepository;
+    private final TransacaoMapper transacaoMapper;
 
-    public TransacaoService(TransacaoRepository transacaoRepository, ContaBancariaRepository contaBancariaRepository) {
+    public TransacaoService(TransacaoRepository transacaoRepository, ContaBancariaRepository contaBancariaRepository, TransacaoMapper transacaoMapper) {
         this.transacaoRepository = transacaoRepository;
         this.contaBancariaRepository = contaBancariaRepository;
+        this.transacaoMapper = transacaoMapper;
     }
 
+    @Transactional
+    public void save(TransacaoDTO transacaoDTO) {
+        Transacao transacao = transacaoMapper.toTransacao(transacaoDTO);
+        transacao.setContaBancaria(contaBancariaRepository.findById(
+                transacaoDTO.getIdInstituicao()).orElseThrow(() -> new NotFoundException("Conta bancária não encontrada"))
+        );
+        transacaoRepository.save(transacao);
+    }
+
+    @Transactional(readOnly = true)
     public List<TransacaoDTO> buscarTransacoesByPeriodo(Long usuarioId, LocalDate dataInicial, LocalDate dataFinal) {
         List<ContaBancariaProjection> contasBancariasProjection = contaBancariaRepository.findByUsuarioId(usuarioId);
         List<TransacaoDTO> transacaoDTOS = new ArrayList<>();

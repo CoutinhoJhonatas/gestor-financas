@@ -18,12 +18,10 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateRenderer;
-import com.vaadin.flow.data.renderer.NumberRenderer;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
@@ -33,7 +31,6 @@ import jakarta.annotation.security.PermitAll;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
-import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.List;
@@ -41,7 +38,7 @@ import java.util.Locale;
 
 @PageTitle("Realizado")
 @Route("realizado")
-@Menu(order = 1, icon = LineAwesomeIconUrl.PENCIL_RULER_SOLID)
+@Menu(order = 2, icon = LineAwesomeIconUrl.PENCIL_RULER_SOLID)
 @PermitAll
 public class RealizadoView extends Composite<VerticalLayout> {
 
@@ -133,6 +130,7 @@ public class RealizadoView extends Composite<VerticalLayout> {
                 grid.setItems(transacoes);
                 totalEntradas.setValue(transacaoService.calcularTotalEntrada(transacoes));
                 totalSaidas.setValue(transacaoService.calcularTotalSaida(transacoes));
+                clearFilters(startDate, endDate, contasBancarias);
                 binder.readBean(null);
             } else {
                 System.out.println(binder.validate().getValidationErrors());
@@ -144,11 +142,7 @@ public class RealizadoView extends Composite<VerticalLayout> {
         searchBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         searchBtn.getStyle().setMarginRight("20px");
 
-        Button resetBtn = new Button("Limpar", e -> {
-            startDate.clear();
-            endDate.clear();
-            contasBancarias.clear();
-        });
+        Button resetBtn = new Button("Limpar", e -> clearFilters(startDate, endDate, contasBancarias));
         resetBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
         btnsDiv.add(searchBtn, resetBtn);
@@ -163,6 +157,12 @@ public class RealizadoView extends Composite<VerticalLayout> {
         gridDiv.add(grid);
 
         getContent().add(filtrosDiv, gridDiv,totaisDiv);
+    }
+
+    private static void clearFilters(DatePicker startDate, DatePicker endDate, MultiSelectComboBox<String> contasBancarias) {
+        startDate.clear();
+        endDate.clear();
+        contasBancarias.clear();
     }
 
     private Grid<TransacaoDTO> createGrid() {
