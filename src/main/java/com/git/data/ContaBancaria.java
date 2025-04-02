@@ -19,6 +19,7 @@ public class ContaBancaria {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private String nomeInstituicao;
+    private String codigoBanco;
     private String agencia;
     private String numero;
     private String digito;
@@ -33,9 +34,10 @@ public class ContaBancaria {
     public ContaBancaria() {
     }
 
-    public ContaBancaria(Long id, String nomeInstituicao, String agencia, String numero, String digito) {
+    public ContaBancaria(Long id, String nomeInstituicao, String codigoBanco, String agencia, String numero, String digito) {
         this.id = id;
         this.nomeInstituicao = nomeInstituicao;
+        this.codigoBanco = codigoBanco;
         this.agencia = agencia;
         this.numero = numero;
         this.digito = digito;
@@ -55,6 +57,22 @@ public class ContaBancaria {
 
     public void setNomeInstituicao(String nomeInstituicao) {
         this.nomeInstituicao = nomeInstituicao;
+    }
+
+    public String getCodigoBanco() {
+        return codigoBanco;
+    }
+
+    public void setCodigoBanco(String codigoBanco) {
+        this.codigoBanco = codigoBanco;
+    }
+
+    public User getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(User usuario) {
+        this.usuario = usuario;
     }
 
     public String getAgencia() {

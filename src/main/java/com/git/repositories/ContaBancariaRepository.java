@@ -13,6 +13,7 @@ public interface ContaBancariaRepository extends JpaRepository<ContaBancaria, Lo
 
     @Query(nativeQuery = true,
             value = "SELECT tcb.id, " +
+                    "tcb.codigo_banco, " +
                     "tcb.agencia, " +
                     "tcb.numero, " +
                     "tcb.digito, " +
