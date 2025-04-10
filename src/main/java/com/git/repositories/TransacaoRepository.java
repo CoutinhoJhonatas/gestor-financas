@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Repository
-public interface TransacaoRepository extends JpaRepository<Transacao, Integer> {
+public interface TransacaoRepository extends JpaRepository<Transacao, Long> {
 
     @Query(nativeQuery = true,
             value = "SELECT tt.id, " +

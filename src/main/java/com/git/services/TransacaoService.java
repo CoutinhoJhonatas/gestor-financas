@@ -39,6 +39,21 @@ public class TransacaoService {
         transacaoRepository.save(transacao);
     }
 
+    @Transactional
+    public void update(TransacaoDTO transacaoDTO) {
+        Transacao transacao = transacaoRepository.findById(transacaoDTO.getId())
+                .orElseThrow(() -> new NotFoundException("Transação não encontrada"));
+
+        transacao.setDescricao(transacaoDTO.getDescricao());
+        transacao.setValor(transacaoDTO.getValor());
+        transacao.setData(transacaoDTO.getData());
+        transacao.setContaBancaria(contaBancariaRepository.findById(
+                transacaoDTO.getIdInstituicao()).orElseThrow(() -> new NotFoundException("Conta bancária não encontrada"))
+        );
+
+        transacaoRepository.save(transacao);
+    }
+
     @Transactional(readOnly = true)
     public List<TransacaoDTO> buscarTransacoesByPeriodo(Long usuarioId, LocalDate dataInicial, LocalDate dataFinal) {
         List<ContaBancariaProjection> contasBancariasProjection = contaBancariaRepository.findByUsuarioId(usuarioId);
@@ -66,6 +81,18 @@ public class TransacaoService {
         });
 
         return transacaoDTOS;
+    }
+
+    @Transactional(readOnly = true)
+    public TransacaoDTO buscarTransacaoById(Long transacaoId) {
+        Transacao transacao = transacaoRepository.findById(transacaoId)
+                .orElseThrow(() -> new NotFoundException("Transação não encontrada"));
+        return transacaoMapper.toTransacaoDTO(transacao);
+    }
+
+    @Transactional
+    public void excluir(Long transacaoId) {
+        transacaoRepository.deleteById(transacaoId);
     }
 
     public String calcularTotalEntrada(List<TransacaoDTO> transacoes) {

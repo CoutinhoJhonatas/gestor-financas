@@ -148,7 +148,7 @@ public class CadastrarTransacao extends Composite<VerticalLayout> {
                         contaBancaria.getValue().getNomeInstituicao(),
                         contaBancaria.getValue().getId()
                 ));
-                notification = Notification.show("Salvo com sucesso");
+                notification = Notification.show("SALVO COM SUCESSO", 4000, Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
                 clearForm(descricao, date, valor, contaBancaria);
@@ -351,21 +351,21 @@ public class CadastrarTransacao extends Composite<VerticalLayout> {
         valor.addValueChangeListener(e -> {
             String value = e.getValue();
 
-            // Ajuste no regex para permitir números negativos
-            if (!value.matches("^-?\\d{1,3}(\\.\\d{3})*,\\d{2}$")) {
-                // Remove caracteres inválidos e mantém apenas números, pontos, vírgulas e o sinal de "-"
-                value = value.replaceAll("[^\\d.,-]", "");
+            // Remove caracteres inválidos: só permite dígitos, vírgula e traço
+            value = value.replaceAll("[^\\d,-]", "");
 
-                // Garante que o "-" só apareça no início, se existir
-                if (value.contains("-")) {
-                    value = "-" + value.replace("-", "");
-                }
+            // Garante que o "-" só apareça no início, se existir
+            if (value.contains("-")) {
+                value = "-" + value.replace("-", "");
+            }
 
-                // Corrige casos onde o usuário digitou um valor sem os centavos
-                if (value.matches("^-?\\d+(\\.\\d{3})*$")) {
-                    value += ",00";
-                }
+            // Corrige casos onde o usuário digitou um valor sem os centavos
+            if (value.matches("^-?\\d+(\\.\\d{3})*$")) {
+                value += ",00";
+            }
 
+            // Atualiza o valor somente se for diferente, para evitar loops infinitos
+            if (!value.equals(e.getValue())) {
                 valor.setValue(value);
             }
         });
