@@ -314,7 +314,10 @@ public class CadastrarTransacao extends Composite<VerticalLayout> {
         Select<ContaBancariaProjection> contaBancaria = new Select<>();
         contaBancaria.setLabel("Conta Bancária");
         contaBancaria.setPlaceholder("Selecione a conta bancária");
-        contaBancaria.setItems(listContaBancaria);
+        contaBancaria.setItems(listContaBancaria.stream()
+                .filter(c -> c.getNomeInstituicao().equals("Itaú"))
+                .findFirst()
+                .orElse(null));
         contaBancaria.setItemLabelGenerator(ContaBancariaProjection::getNomeInstituicao);
         return contaBancaria;
     }

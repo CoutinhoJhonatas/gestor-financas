@@ -25,7 +25,18 @@ public class LoginView extends LoginOverlay implements BeforeEnterObserver {
         LoginI18n i18n = LoginI18n.createDefault();
         i18n.setHeader(new LoginI18n.Header());
         i18n.getHeader().setTitle("Gestor Financeiro");
-        i18n.getHeader().setDescription("Login using user/user or admin/admin");
+        i18n.getHeader().setDescription("Faça o login abaixo utilizando suas credenciais");
+
+        i18n.getForm().setTitle(null);
+        i18n.getForm().setUsername("Usuário");
+        i18n.getForm().setPassword("Senha");
+        i18n.getForm().setSubmit("Entrar");
+
+        i18n.getErrorMessage().setTitle("Usuário e/ou senha inválidos");
+        i18n.getErrorMessage().setMessage("Confira se os dados inseridos estão corretos e tente novamente");
+        i18n.getErrorMessage().setUsername("Usuário requerido");
+        i18n.getErrorMessage().setPassword("Senha requerida");
+
         i18n.setAdditionalInformation(null);
         setI18n(i18n);
 
