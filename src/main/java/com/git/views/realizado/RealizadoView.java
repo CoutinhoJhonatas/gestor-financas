@@ -42,8 +42,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 
-@PageTitle("Realizado")
-@Route("realizado")
+@PageTitle("Transações Realizadas")
+@Route("realizadas")
 @Menu(order = 2, icon = LineAwesomeIconUrl.PENCIL_RULER_SOLID)
 @PermitAll
 public class RealizadoView extends Composite<VerticalLayout> {

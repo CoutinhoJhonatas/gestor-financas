@@ -163,10 +163,13 @@ public class CadastrarTransacao extends Composite<VerticalLayout> {
 
         });
         saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        saveBtn.getStyle().setMarginRight("20px");
+        saveBtn.getStyle()
+                .set("cursor", "pointer")
+                .setMarginRight("20px");
 
         Button resetBtn = new Button("Limpar", e -> clearForm(descricao, date, valor, contaBancaria));
         resetBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        resetBtn.getStyle().set("cursor", "pointer");
 
         btnsDiv.add(saveBtn, resetBtn);
         divLayoutForm.add(form, btnsDiv);

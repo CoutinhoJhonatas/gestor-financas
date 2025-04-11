@@ -18,6 +18,7 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.Layout;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.auth.AccessAnnotationChecker;
@@ -25,6 +26,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.server.menu.MenuConfiguration;
 import com.vaadin.flow.server.menu.MenuEntry;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Optional;
@@ -51,18 +53,37 @@ public class MainLayout extends AppLayout {
     }
 
     private void addHeaderContent() {
+        Div header = new Div();
+        header.setWidthFull();
+        header.getStyle()
+                .setDisplay(Style.Display.FLEX)
+                .setAlignItems(Style.AlignItems.CENTER)
+                .setHeight("56px")
+                .set("background-color", "#f5f7fa");
+
         DrawerToggle toggle = new DrawerToggle();
-        toggle.setAriaLabel("Menu toggle");
+        toggle.setAriaLabel("Menu");
 
         viewTitle = new H1();
-        viewTitle.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.NONE);
+        viewTitle.addClassNames(
+                LumoUtility.FontSize.XLARGE,
+                LumoUtility.FontWeight.BOLD,
+                LumoUtility.TextColor.BODY
+        );
 
-        addToNavbar(true, toggle, viewTitle);
+        header.add(toggle, viewTitle);
+
+        addToNavbar(true, header);
     }
 
     private void addDrawerContent() {
-        Span appName = new Span("Gestor Financeiro");
-        appName.addClassNames(LumoUtility.FontWeight.SEMIBOLD, LumoUtility.FontSize.LARGE);
+        Span appName = new Span("\uD83D\uDCB0 Gestor Financeiro");
+        appName.addClassNames(
+                LumoUtility.FontSize.XLARGE,
+                LumoUtility.FontWeight.BOLD,
+                LumoUtility.TextColor.BODY
+        );
+
         Header header = new Header(appName);
 
         Scroller scroller = new Scroller(createNavigation());
@@ -97,7 +118,6 @@ public class MainLayout extends AppLayout {
                     () -> new ByteArrayInputStream(user.getProfilePicture()));
             avatar.setImageResource(resource);
             avatar.setThemeName("xsmall");
-            avatar.getElement().setAttribute("tabindex", "-1");
 
             MenuBar userMenu = new MenuBar();
             userMenu.setThemeName("tertiary-inline contrast");
@@ -109,13 +129,11 @@ public class MainLayout extends AppLayout {
             div.add(new Icon("lumo", "dropdown"));
             div.addClassNames(LumoUtility.Display.FLEX, LumoUtility.AlignItems.CENTER, LumoUtility.Gap.SMALL);
             userName.add(div);
-            userName.getSubMenu().addItem("Sign out", e -> {
-                authenticatedUser.logout();
-            });
+            userName.getSubMenu().addItem("Sair", e -> authenticatedUser.logout());
 
             layout.add(userMenu);
         } else {
-            Anchor loginLink = new Anchor("login", "Sign in");
+            Anchor loginLink = new Anchor("login", "Entrar");
             layout.add(loginLink);
         }
 
